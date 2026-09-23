@@ -66,6 +66,10 @@ impl Worldly {
     }
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Default, Hash, Component, Reflect)]
+#[reflect(Component)]
+pub struct LdtkSprite;
+
 /// [Component] that stores grid-based coordinate information.
 ///
 /// For Tile, AutoTile, and IntGrid layers, all tiles have this component by default.

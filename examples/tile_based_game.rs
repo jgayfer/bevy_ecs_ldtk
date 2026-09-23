@@ -10,8 +10,8 @@ fn main() {
         .add_plugins(LdtkPlugin)
         .add_systems(Startup, setup)
         .insert_resource(LevelSelection::index(0))
-        .register_ldtk_entity::<PlayerBundle>("Player")
-        .register_ldtk_entity::<GoalBundle>("Goal")
+        .register_ldtk_entity_component::<Player>("Player")
+        .register_ldtk_entity_component::<Goal>("Goal")
         .add_systems(
             Update,
             (
@@ -43,28 +43,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 }
 
 #[derive(Default, Component)]
+#[require(LdtkSprite, GridCoords)]
 struct Player;
 
-#[derive(Default, Bundle, LdtkEntity)]
-struct PlayerBundle {
-    player: Player,
-    #[sprite_sheet]
-    sprite_sheet: Sprite,
-    #[grid_coords]
-    grid_coords: GridCoords,
-}
-
 #[derive(Default, Component)]
+#[require(LdtkSprite, GridCoords)]
 struct Goal;
-
-#[derive(Default, Bundle, LdtkEntity)]
-struct GoalBundle {
-    goal: Goal,
-    #[sprite_sheet]
-    sprite_sheet: Sprite,
-    #[grid_coords]
-    grid_coords: GridCoords,
-}
 
 #[derive(Default, Component)]
 struct Wall;

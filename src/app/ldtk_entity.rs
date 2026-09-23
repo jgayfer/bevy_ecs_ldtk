@@ -1,9 +1,13 @@
 use crate::{
-    components::{EntityInstanceBundle, GridCoords, Worldly},
+    components::{EntityInstanceBundle, GridCoords, LdtkSprite, Worldly},
     ldtk::{EntityInstance, LayerInstance, TilesetDefinition},
     utils,
 };
-use bevy::{ecs::system::EntityCommands, prelude::*};
+use bevy::{
+    ecs::{system::EntityCommands, world::EntityWorldMut},
+    prelude::*,
+    scene::{EntityCommandsSceneExt, Scene, SceneComponent},
+};
 use std::{collections::HashMap, marker::PhantomData};
 
 /// [LdtkEntityAppExt]: super::LdtkEntityAppExt
@@ -319,8 +323,7 @@ pub trait LdtkEntity {
     /// registered to the app.
     ///
     /// Note: whether or not the entity is registered to the app, the plugin will insert a
-    /// [SpatialBundle](bevy::prelude::SpatialBundle) to the entity **after** this bundle is
-    /// inserted.
+    /// [Transform] and [Visibility] to the entity **after** this bundle is inserted.
     /// So, any custom implementations of these components within this trait will be overwritten.
     fn bundle_entity(
         entity_instance: &EntityInstance,
@@ -433,6 +436,132 @@ impl<B: LdtkEntity + Bundle> PhantomLdtkEntityTrait for PhantomLdtkEntity<B> {
             texture_atlases,
         ))
     }
+}
+
+pub trait LdtkEntityScene {
+    fn scene(
+        entity_instance: &EntityInstance,
+        layer_instance: &LayerInstance,
+        tileset: Option<&Handle<Image>>,
+        tileset_definition: Option<&TilesetDefinition>,
+        asset_server: &AssetServer,
+        texture_atlases: &mut Assets<TextureAtlasLayout>,
+    ) -> impl Scene;
+}
+
+impl<S: SceneComponent> LdtkEntityScene for S {
+    fn scene(
+        _: &EntityInstance,
+        _: &LayerInstance,
+        _: Option<&Handle<Image>>,
+        _: Option<&TilesetDefinition>,
+        _: &AssetServer,
+        _: &mut Assets<TextureAtlasLayout>,
+    ) -> impl Scene {
+        S::scene(S::Props::default())
+    }
+}
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default, Hash)]
+pub struct PhantomLdtkEntityScene<S: LdtkEntityScene> {
+    ldtk_scene: PhantomData<S>,
+}
+
+impl<S: LdtkEntityScene> PhantomLdtkEntityScene<S> {
+    pub fn new() -> Self {
+        PhantomLdtkEntityScene::<S> {
+            ldtk_scene: PhantomData,
+        }
+    }
+}
+
+impl<S: LdtkEntityScene + 'static> PhantomLdtkEntityTrait for PhantomLdtkEntityScene<S> {
+    fn evaluate<'a, 'b>(
+        &self,
+        entity_commands: &'b mut EntityCommands<'a>,
+        entity_instance: &EntityInstance,
+        layer_instance: &LayerInstance,
+        tileset: Option<&Handle<Image>>,
+        tileset_definition: Option<&TilesetDefinition>,
+        asset_server: &AssetServer,
+        texture_atlases: &mut Assets<TextureAtlasLayout>,
+    ) -> &'b mut EntityCommands<'a> {
+        entity_commands.apply_scene(S::scene(
+            entity_instance,
+            layer_instance,
+            tileset,
+            tileset_definition,
+            asset_server,
+            texture_atlases,
+        ))
+    }
+}
+
+/// Registers a plain [Component] to be inserted with [Default::default].
+///
+/// Required components (`#[require(...)]`) come along for free, and
+/// [patch_ldtk_components] then fills LDtk data into them.
+#[derive(Copy, Clone, Eq, PartialEq, Debug, Default, Hash)]
+pub struct PhantomLdtkEntityComponent<C: Component + Default> {
+    ldtk_component: PhantomData<C>,
+}
+
+impl<C: Component + Default> PhantomLdtkEntityComponent<C> {
+    pub fn new() -> Self {
+        PhantomLdtkEntityComponent::<C> {
+            ldtk_component: PhantomData,
+        }
+    }
+}
+
+impl<C: Component + Default> PhantomLdtkEntityTrait for PhantomLdtkEntityComponent<C> {
+    fn evaluate<'a, 'b>(
+        &self,
+        entity_commands: &'b mut EntityCommands<'a>,
+        _: &EntityInstance,
+        _: &LayerInstance,
+        _: Option<&Handle<Image>>,
+        _: Option<&TilesetDefinition>,
+        _: &AssetServer,
+        _: &mut Assets<TextureAtlasLayout>,
+    ) -> &'b mut EntityCommands<'a> {
+        entity_commands.insert(C::default())
+    }
+}
+
+pub fn patch_ldtk_components(
+    entity_commands: &mut EntityCommands,
+    entity_instance: &EntityInstance,
+    layer_instance: &LayerInstance,
+    tileset: Option<&Handle<Image>>,
+    tileset_definition: Option<&TilesetDefinition>,
+    texture_atlases: &mut Assets<TextureAtlasLayout>,
+) {
+    let grid_coords = GridCoords::from_entity_info(entity_instance, layer_instance);
+    let worldly = Worldly::from_entity_info(entity_instance);
+    let sprite = (entity_instance.tile.is_some() && tileset.is_some()).then(|| {
+        utils::sprite_sheet_from_entity_info(
+            entity_instance,
+            tileset,
+            tileset_definition,
+            texture_atlases,
+            true,
+        )
+    });
+
+    entity_commands.queue(move |mut entity: EntityWorldMut| {
+        if let Some(mut c) = entity.get_mut::<GridCoords>() {
+            *c = grid_coords;
+        }
+        if let Some(mut c) = entity.get_mut::<Worldly>() {
+            *c = worldly;
+        }
+        if entity.contains::<LdtkSprite>() {
+            if let Some(sprite) = sprite {
+                entity.insert(sprite);
+            }
+        }
+    });
 }
 
 /// Used by [LdtkEntityAppExt](super::LdtkEntityAppExt) to associate Ldtk entity identifiers with [LdtkEntity]s.

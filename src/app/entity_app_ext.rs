@@ -99,6 +99,38 @@ pub trait LdtkEntityAppExt {
     fn register_default_ldtk_entity<B: LdtkEntity + Bundle>(&mut self) -> &mut Self {
         self.register_ldtk_entity_for_layer_optional::<B>(None, None)
     }
+
+    fn register_ldtk_entity_scene_for_layer_optional<S: LdtkEntityScene + 'static>(
+        &mut self,
+        layer_identifier: Option<String>,
+        entity_identifier: Option<String>,
+    ) -> &mut Self;
+
+    fn register_ldtk_entity_scene<S: LdtkEntityScene + 'static>(
+        &mut self,
+        entity_identifier: &str,
+    ) -> &mut Self {
+        self.register_ldtk_entity_scene_for_layer_optional::<S>(
+            None,
+            Some(entity_identifier.to_string()),
+        )
+    }
+
+    fn register_ldtk_entity_component_for_layer_optional<C: Component + Default>(
+        &mut self,
+        layer_identifier: Option<String>,
+        entity_identifier: Option<String>,
+    ) -> &mut Self;
+
+    fn register_ldtk_entity_component<C: Component + Default>(
+        &mut self,
+        entity_identifier: &str,
+    ) -> &mut Self {
+        self.register_ldtk_entity_component_for_layer_optional::<C>(
+            None,
+            Some(entity_identifier.to_string()),
+        )
+    }
 }
 
 impl LdtkEntityAppExt for App {
@@ -107,19 +139,55 @@ impl LdtkEntityAppExt for App {
         layer_identifier: Option<String>,
         entity_identifier: Option<String>,
     ) -> &mut Self {
-        let new_entry = Box::new(PhantomLdtkEntity::<B>::new());
-        match self.world_mut().get_non_send_mut::<LdtkEntityMap>() {
-            Some(mut entries) => {
-                entries.insert((layer_identifier, entity_identifier), new_entry);
-            }
-            None => {
-                let mut bundle_map = LdtkEntityMap::new();
-                bundle_map.insert((layer_identifier, entity_identifier), new_entry);
-                self.world_mut()
-                    .insert_non_send::<LdtkEntityMap>(bundle_map);
-            }
-        }
+        insert_entry(
+            self,
+            (layer_identifier, entity_identifier),
+            Box::new(PhantomLdtkEntity::<B>::new()),
+        );
         self
+    }
+
+    fn register_ldtk_entity_scene_for_layer_optional<S: LdtkEntityScene + 'static>(
+        &mut self,
+        layer_identifier: Option<String>,
+        entity_identifier: Option<String>,
+    ) -> &mut Self {
+        insert_entry(
+            self,
+            (layer_identifier, entity_identifier),
+            Box::new(PhantomLdtkEntityScene::<S>::new()),
+        );
+        self
+    }
+
+    fn register_ldtk_entity_component_for_layer_optional<C: Component + Default>(
+        &mut self,
+        layer_identifier: Option<String>,
+        entity_identifier: Option<String>,
+    ) -> &mut Self {
+        insert_entry(
+            self,
+            (layer_identifier, entity_identifier),
+            Box::new(PhantomLdtkEntityComponent::<C>::new()),
+        );
+        self
+    }
+}
+
+fn insert_entry(
+    app: &mut App,
+    key: (Option<String>, Option<String>),
+    entry: Box<dyn PhantomLdtkEntityTrait>,
+) {
+    match app.world_mut().get_non_send_mut::<LdtkEntityMap>() {
+        Some(mut entries) => {
+            entries.insert(key, entry);
+        }
+        None => {
+            let mut map = LdtkEntityMap::new();
+            map.insert(key, entry);
+            app.world_mut().insert_non_send::<LdtkEntityMap>(map);
+        }
     }
 }
 

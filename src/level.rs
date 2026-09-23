@@ -2,8 +2,8 @@
 
 use crate::{
     app::{
-        LdtkEntity, LdtkEntityMap, LdtkIntCellMap, PhantomLdtkEntity, PhantomLdtkEntityTrait,
-        PhantomLdtkIntCell, PhantomLdtkIntCellTrait,
+        patch_ldtk_components, LdtkEntity, LdtkEntityMap, LdtkIntCellMap, PhantomLdtkEntity,
+        PhantomLdtkEntityTrait, PhantomLdtkIntCell, PhantomLdtkIntCellTrait,
     },
     components::*,
     ldtk::{
@@ -351,6 +351,15 @@ pub fn spawn_level(
                                     tileset,
                                     tileset_definition,
                                     asset_server,
+                                    texture_atlases,
+                                );
+
+                                patch_ldtk_components(
+                                    &mut entity_commands,
+                                    entity_instance,
+                                    layer_instance,
+                                    tileset,
+                                    tileset_definition,
                                     texture_atlases,
                                 );
 
