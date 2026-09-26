@@ -35,5 +35,8 @@ pub use ldtk_project_data::LdtkProjectData;
 mod ldtk_project;
 pub use ldtk_project::LdtkProject;
 
+mod ldtk_tileset_ref;
+pub use ldtk_tileset_ref::LdtkTilesetRef;
+
 mod level_indices;
 pub use level_indices::LevelIndices;
