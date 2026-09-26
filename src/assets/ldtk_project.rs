@@ -2,7 +2,8 @@ use std::io;
 
 use crate::{
     assets::{
-        LdtkJsonWithMetadata, LdtkProjectData, LevelIndices, LevelMetadata, LevelMetadataAccessor,
+        LdtkJsonWithMetadata, LdtkProjectData, LdtkTilesetRef, LevelIndices, LevelMetadata,
+        LevelMetadataAccessor,
     },
     ldtk::{raw_level_accessor::RawLevelAccessor, LdtkJson, Level},
 };
@@ -78,6 +79,8 @@ pub struct LdtkProject {
     data: LdtkProjectData,
     /// Map from tileset uids to image handles for the loaded tileset.
     tileset_map: HashMap<i32, Handle<Image>>,
+    /// Map from tileset uids to the tileset's definition and resolved source file path.
+    tileset_refs: HashMap<i32, LdtkTilesetRef>,
     /// Image used for rendering int grid colors.
     int_grid_image_handle: Option<Handle<Image>>,
 }
@@ -89,11 +92,13 @@ impl LdtkProject {
     fn new(
         data: LdtkProjectData,
         tileset_map: HashMap<i32, Handle<Image>>,
+        tileset_refs: HashMap<i32, LdtkTilesetRef>,
         int_grid_image_handle: Option<Handle<Image>>,
     ) -> LdtkProject {
         LdtkProject {
             data,
             tileset_map,
+            tileset_refs,
             int_grid_image_handle,
         }
     }
@@ -238,11 +243,19 @@ impl AssetLoader for LdtkProjectLoader {
         let data: LdtkJson = serde_json::from_slice(&bytes)?;
 
         let mut tileset_map: HashMap<i32, Handle<Image>> = HashMap::new();
+        let mut tileset_refs: HashMap<i32, LdtkTilesetRef> = HashMap::new();
         for tileset in &data.defs.tilesets {
             if let Some(tileset_path) = &tileset.rel_path {
                 let asset_path = ldtk_path_to_asset_path(load_context.path(), tileset_path)?;
 
-                tileset_map.insert(tileset.uid, load_context.load(asset_path));
+                tileset_map.insert(tileset.uid, load_context.load(asset_path.clone()));
+                tileset_refs.insert(
+                    tileset.uid,
+                    LdtkTilesetRef {
+                        definition: tileset.clone(),
+                        path: asset_path.into_owned(),
+                    },
+                );
             } else if tileset.embed_atlas.is_some() {
                 warn!("Ignoring LDtk's Internal_Icons. They cannot be displayed due to their license.");
             } else {
@@ -271,6 +284,7 @@ impl AssetLoader for LdtkProjectLoader {
                 LdtkProject::new(
                     LdtkProjectData::Parent(LdtkJsonWithMetadata::new(data, level_map)),
                     tileset_map,
+                    tileset_refs,
                     int_grid_image_handle,
                 )
             }
@@ -294,6 +308,7 @@ impl AssetLoader for LdtkProjectLoader {
                 LdtkProject::new(
                     LdtkProjectData::Standalone(LdtkJsonWithMetadata::new(data, level_map)),
                     tileset_map,
+                    tileset_refs,
                     int_grid_image_handle,
                 )
             }
@@ -347,6 +362,7 @@ mod tests {
             LdtkProject {
                 data,
                 tileset_map,
+                tileset_refs: HashMap::new(),
                 int_grid_image_handle: Some(Handle::Uuid(UUIDv4.fake(), PhantomData)),
             }
         }
