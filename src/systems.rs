@@ -300,6 +300,7 @@ pub fn process_ldtk_levels(
                 &entity_definition_map,
                 &layer_definition_map,
                 ldtk_project.tileset_map(),
+                ldtk_project.tileset_refs(),
                 &tileset_definition_map,
                 int_grid_image_handle,
                 worldly_set,

@@ -5,7 +5,9 @@ use crate::{
         LdtkEntity, LdtkEntityMap, LdtkIntCellMap, PhantomLdtkEntity, PhantomLdtkEntityTrait,
         PhantomLdtkIntCell, PhantomLdtkIntCellTrait,
     },
+    assets::LdtkTilesetRef,
     components::*,
+    events::LdtkEntitySpawned,
     ldtk::{
         loaded_level::LoadedLevel, EntityDefinition, EnumTagValue, LayerDefinition, LayerInstance,
         LevelBackgroundPosition, TileCustomMetadata, TileInstance, TilesetDefinition, Type,
@@ -225,6 +227,7 @@ pub fn spawn_level(
     entity_definition_map: &HashMap<i32, &EntityDefinition>,
     layer_definition_map: &HashMap<i32, &LayerDefinition>,
     tileset_map: &HashMap<i32, Handle<Image>>,
+    tileset_refs: &HashMap<i32, LdtkTilesetRef>,
     tileset_definition_map: &HashMap<i32, &TilesetDefinition>,
     int_grid_image_handle: &Option<Handle<Image>>,
     worldly_set: &HashSet<Worldly>,
@@ -355,6 +358,16 @@ pub fn spawn_level(
                                 );
 
                                 entity_commands.insert(transform);
+
+                                let tileset = entity_instance
+                                    .tile
+                                    .and_then(|tile| tileset_refs.get(&tile.tileset_uid).cloned());
+
+                                entity_commands.trigger(|entity| LdtkEntitySpawned {
+                                    entity,
+                                    instance: entity_instance.clone(),
+                                    tileset,
+                                });
                             }
                         }
                     })
