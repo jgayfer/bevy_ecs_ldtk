@@ -27,6 +27,7 @@ For less common use cases, strategies that leverage this plugin's ECS constructs
   loader](https://ldtk.io/files/quicktype/LdtkJson.rs), but with several QoL
   improvements
 - Support for Wasm (and tile spacing) through "atlas" feature
+- Support for Aseprite files as tilesets through "aseprite" feature
 
 ## Documentation
 Documentation for this plugin is available in two main places.

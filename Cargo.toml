@@ -26,6 +26,7 @@ regex = "1"
 thiserror = "2.0"
 paste = "1.0"
 derive_more = { version = "2.1.1", features = ["constructor", "try_into"] }
+aseprite-loader = { version = "0.4.2", optional = true }
 
 [dev-dependencies]
 bevy = "0.19"
@@ -39,6 +40,7 @@ default = ["derive", "render", "internal_levels"]
 derive = ["bevy_ecs_ldtk_macros"]
 atlas = ["bevy_ecs_tilemap/atlas"]
 render = ["bevy_ecs_tilemap/render"]
+aseprite = ["dep:aseprite-loader"]
 internal_levels = []
 external_levels = []
 

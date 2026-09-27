@@ -3,6 +3,14 @@
 mod ldtk_asset_plugin;
 pub use ldtk_asset_plugin::LdtkAssetPlugin;
 
+#[cfg(feature = "aseprite")]
+mod aseprite_image_loader;
+
+#[cfg(feature = "aseprite")]
+pub use aseprite_image_loader::{
+    AsepriteImageLoader, AsepriteImageLoaderError, AsepriteImageLoaderSettings,
+};
+
 mod level_metadata;
 pub use level_metadata::LevelMetadata;
 
