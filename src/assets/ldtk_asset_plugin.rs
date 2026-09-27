@@ -1,16 +1,11 @@
 #[cfg(feature = "aseprite")]
-use crate::assets::AsepriteImageLoader;
+use crate::assets::aseprite_image_loader::AsepriteImageLoader;
 #[cfg(feature = "external_levels")]
 use crate::assets::{ldtk_external_level::LdtkExternalLevelLoader, LdtkExternalLevel};
 use crate::assets::{ldtk_project::LdtkProjectLoader, LdtkProject};
 use bevy::prelude::*;
 
 /// Plugin that registers LDtk-related assets.
-///
-/// With the `aseprite` feature enabled, this also registers an [`AssetLoader`] that loads
-/// `.aseprite` and `.ase` files as [`Image`]s, so that Aseprite files can be used as tilesets.
-///
-/// [`AssetLoader`]: bevy::asset::AssetLoader
 #[derive(Copy, Clone, Debug, Default)]
 pub struct LdtkAssetPlugin;
 

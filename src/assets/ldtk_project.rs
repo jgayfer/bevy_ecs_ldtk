@@ -242,6 +242,16 @@ impl AssetLoader for LdtkProjectLoader {
             if let Some(tileset_path) = &tileset.rel_path {
                 let asset_path = ldtk_path_to_asset_path(load_context.path(), tileset_path)?;
 
+                #[cfg(not(feature = "aseprite"))]
+                if matches!(asset_path.get_full_extension(), Some("aseprite" | "ase")) {
+                    let identifier = &tileset.identifier;
+                    warn!(
+                        "{identifier} tileset is an Aseprite file, which requires an Image asset \
+                        loader for its extension. Enable the `aseprite` feature of bevy_ecs_ldtk \
+                        or register your own, otherwise levels using it will not spawn."
+                    );
+                }
+
                 tileset_map.insert(tileset.uid, load_context.load(asset_path));
             } else if tileset.embed_atlas.is_some() {
                 warn!("Ignoring LDtk's Internal_Icons. They cannot be displayed due to their license.");
