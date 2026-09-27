@@ -27,7 +27,7 @@
 //! - `atlas`: Enables the `atlas` feature of [bevy_ecs_tilemap]. This is required for WASM support
 //! and also for tile spacing to work on Tile and AutoTile layers.
 //! - `aseprite`: Enables loading `.aseprite` and `.ase` files as [Image]s, so that Aseprite files
-//! can be used as tilesets. Only the first frame is rendered, using the file's visible layers.
+//! can be used as tilesets. Frames are rendered and laid out the same way LDtk does it.
 //!
 //! The `derive`, `render`, and `internal_levels` features are enabled by default.
 //! Furthermore, one or both of `internal_levels` and `external_levels` must be enabled.
