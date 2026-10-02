@@ -81,8 +81,11 @@ jobs:
             ~/.cargo/git/db/
             target/
           key: ${{ runner.os }}-cargo-clippy-${{ hashFiles('**/Cargo.toml') }}
-      - name: Install stable toolchain
-        uses: dtolnay/rust-toolchain@stable
+      # clippy 1.99 has a regression where `redundant_field_names`
+      # fires on derive-generated code (e.g. derive_more::Constructor).
+      # Unpin once https://github.com/rust-lang/rust-clippy/issues/17525 is fixed.
+      - name: Install 1.98 toolchain
+        uses: dtolnay/rust-toolchain@1.98
         with:
           components: clippy
       - name: Install Dependencies
